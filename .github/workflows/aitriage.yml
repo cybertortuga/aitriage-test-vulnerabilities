@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   static-scan:
-    name: 🔍 Static Security Scan
+    name: Static Security Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -43,7 +43,7 @@ jobs:
           path: report.html
 
   ai-triage:
-    name: 🤖 AI Triage & Fix Specs
+    name: AI Triage & Fix Specs
     needs: static-scan
     runs-on: ubuntu-latest
     steps:
@@ -64,14 +64,15 @@ jobs:
         if: always()
         run: |
           if [ -f report.md ]; then
-            echo "### 🛡️ AITriage AI Audit Report" >> $GITHUB_STEP_SUMMARY
+            echo "### AITriage AI Audit Report" >> $GITHUB_STEP_SUMMARY
             cat report.md >> $GITHUB_STEP_SUMMARY
           fi
           if [ -f fixspec.md ]; then
-            echo "### 🛠️ AI IDE Fix Prompt" >> $GITHUB_STEP_SUMMARY
+            echo "### AI IDE Fix Prompt" >> $GITHUB_STEP_SUMMARY
             echo '```markdown' >> $GITHUB_STEP_SUMMARY
             cat fixspec.md >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
+
 
 
