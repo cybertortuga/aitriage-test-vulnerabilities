@@ -5,11 +5,10 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:            # Allows manual triggers
+  workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   gate:
@@ -20,15 +19,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run AITriage Scanner
+      - name: Run AITriage Scanner (Terminal Log)
         uses: cybertortuga/aitriage@v1
         with:
-          fail-on: never                # Since this repo contains vulnerability benchmarks, don't fail the build so we can see all alerts
-          format: sarif
-          output-file: aitriage-results.sarif
+          fail-on: never
+          format: terminal
 
-      - name: Upload SARIF to GitHub Security Tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+      - name: Generate HTML Security Report
+        uses: cybertortuga/aitriage@v1
         with:
-          sarif_file: aitriage-results.sarif
+          fail-on: never
+          format: html
+          output-file: report.html
+
+      - name: Upload HTML Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aitriage-security-report
+          path: report.html
