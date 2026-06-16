@@ -24,16 +24,9 @@ jobs:
         uses: cybertortuga/aitriage@v1
         with:
           command: 'scan'
+          format: 'html'
+          output-file: 'report.html'
           fail-on: never
-          format: terminal
-
-      - name: Generate HTML Report
-        uses: cybertortuga/aitriage@v1
-        with:
-          command: 'scan'
-          fail-on: never
-          format: html
-          output-file: report.html
 
       - name: Upload HTML Security Report
         if: always()
