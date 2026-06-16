@@ -63,5 +63,15 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
+      - name: Upload AI Triage Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aitriage-ai-triage-results
+          path: |
+            report.md
+            fixspec.md
+
+
 
 
