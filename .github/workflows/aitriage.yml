@@ -20,6 +20,7 @@ jobs:
         uses: cybertortuga/aitriage@v1
         with:
           command: 'scan'
+          args: '--no-summary'
           format: 'html'
           output-file: 'report.html'
           fail-on: never
