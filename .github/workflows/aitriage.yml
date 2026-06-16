@@ -1,0 +1,33 @@
+name: AITriage Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run AITriage Scanner
+        uses: cybertortuga/aitriage@v1
+        with:
+          fail-on: never                # Since this repo contains vulnerability benchmarks, don't fail the build so we can see all alerts
+          format: sarif
+          output-file: aitriage-results.sarif
+
+      - name: Upload SARIF to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: aitriage-results.sarif
