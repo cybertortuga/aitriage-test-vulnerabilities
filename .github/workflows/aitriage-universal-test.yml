@@ -1,8 +1,9 @@
 # PRIMARY / UNIVERSAL EXAMPLE
 # Copy this file to .github/workflows/aitriage.yml in the repository to scan.
 #
-# Layer 1 is the deterministic merge gate. Layer 2 is mandatory AI triage: both
-# stages must complete, while the LLM can never override the policy verdict.
+# Layer 1 collects deterministic evidence but never blocks a change on raw
+# findings. Layer 2 is mandatory AI triage and the sole policy gate: it makes
+# the final decision only after false positives have been classified.
 name: AITriage Universal Pipeline Test
 
 on:
@@ -21,7 +22,7 @@ concurrency:
 
 jobs:
   static-scan:
-    name: Deterministic Security Gate
+    name: Deterministic Evidence Collection
     # A pull request from a fork is untrusted input. Skip the entire job: no
     # checkout, container, scanner, or GitHub secret is made available.
     if: >-
@@ -32,6 +33,9 @@ jobs:
       )
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Raw scanner output has not been triaged and can contain false positives.
+    # The AI gate below still runs and is the only job allowed to fail policy.
+    continue-on-error: true
     permissions:
       contents: read
       security-events: write
@@ -45,7 +49,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Run AITriage policy gate
+      - name: Collect deterministic findings
         # Use the maintained v1 release line. Consumers receive the digest pin
         # after the next Action release advances this reference (see WF-001).
         uses: cybertortuga/aitriage@v1
@@ -53,20 +57,19 @@ jobs:
           command: scan
           format: sarif
           output-file: aitriage.sarif
-          health-profile: standard
-          fail-on: critical
+          # Raw findings are evidence only. Do not make a merge decision here.
+          fail-on: never
           # Enable only after creating and committing .aitriage/baseline.json.
           # baseline: "true"
 
-      # SARIF remains an artifact if GitHub Code Security is not enabled. Set
-      # repository variable AITRIAGE_REQUIRE_SARIF_UPLOAD=true after enabling it
-      # to make this integration a hard requirement for the repository.
+      # SARIF remains an artifact if GitHub Code Security is not enabled. This
+      # integration is evidence-only and cannot override the AI policy verdict.
       - name: Upload SARIF to GitHub Code Scanning
         id: upload-sarif
         if: always() && hashFiles('aitriage.sarif') != ''
         # github/codeql-action/upload-sarif@v4
         uses: github/codeql-action/upload-sarif@411bbbe57033eedfc1a82d68c01345aa96c737d7
-        continue-on-error: ${{ vars.AITRIAGE_REQUIRE_SARIF_UPLOAD != 'true' }}
+        continue-on-error: true
         with:
           sarif_file: aitriage.sarif
           category: aitriage
@@ -76,8 +79,7 @@ jobs:
         run: |
           {
             echo '### AITriage SARIF integration'
-            echo 'SARIF upload failed; the deterministic policy result and downloadable artifact remain authoritative.'
-            echo 'Enable GitHub Code Security, then set AITRIAGE_REQUIRE_SARIF_UPLOAD=true to make upload failures blocking.'
+            echo 'SARIF upload failed; this is reporting-only. The mandatory AI triage gate remains authoritative.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload deterministic scan artifact
@@ -134,6 +136,8 @@ jobs:
           summary-file: summary.md
           args: >-
             --no-chat
+            --health-profile standard
+            --fail-on any
             --report-out report.md
             --fixspec-out fixspec.md
 
