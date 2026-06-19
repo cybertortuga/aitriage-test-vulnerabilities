@@ -59,6 +59,9 @@ jobs:
           output-file: aitriage.sarif
           # Raw findings are evidence only. Do not make a merge decision here.
           fail-on: never
+          # The scanner's raw GHA summary is intentionally suppressed. The
+          # agent writes the only authoritative summary after AI triage.
+          args: --no-summary
           # Enable only after creating and committing .aitriage/baseline.json.
           # baseline: "true"
 
