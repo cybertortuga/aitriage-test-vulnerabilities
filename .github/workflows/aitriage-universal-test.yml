@@ -1,17 +1,14 @@
-# Release validation fixture for cybertortuga/aitriage@v1.
-# Uses the owner ID directly so only the repository owner can run this test.
+# PRIMARY / UNIVERSAL EXAMPLE
+# Copy this file to .github/workflows/aitriage.yml in the repository to scan.
 #
 # Layer 1 collects deterministic evidence but never blocks a change on raw
 # findings. Layer 2 is mandatory AI triage and the sole policy gate: it makes
 # the final decision only after false positives have been classified.
-name: AITriage Security
+name: AITriage Universal Pipeline Test
 
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
-  workflow_dispatch:
 
 # Default to the smallest GITHUB_TOKEN scope. The SARIF upload permission is
 # granted only to the static-scan job.
@@ -80,6 +77,13 @@ jobs:
           sarif_file: aitriage.sarif
           category: aitriage
 
+      - name: Record SARIF upload failure
+        if: always() && steps.upload-sarif.outcome == 'failure'
+        run: |
+          {
+            echo '### AITriage SARIF integration'
+            echo 'SARIF upload failed; this is reporting-only. The mandatory AI triage gate remains authoritative.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload deterministic scan artifact
         if: always()
